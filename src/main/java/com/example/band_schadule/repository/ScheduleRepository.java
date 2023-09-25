@@ -15,19 +15,20 @@ import java.util.Optional;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
-    @Lock(LockModeType.OPTIMISTIC)
+//    @Lock(LockModeType.OPTIMISTIC)
     @Query("select s " +
             "from Schedule s " +
             "where s.id = :id")
     Optional<Schedule> findAllByIdWithOptimisiticLock(@Param("id") Long id);
 
-    @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
+//    @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
     @Modifying
     @Query("update Schedule s " +
             "set s.participant = s.participant + 1 " +
             "where s.id = :id " +
-            "and s.version = :version")
-    void updateParticipantByVersion(@Param("id") Long id ,@Param("version") Integer version);
+//            "and s.version = :version" +
+            "")
+    void updateParticipantByVersion(@Param("id") Long id );
 
     @Query("select s " +
             "from Schedule s " +

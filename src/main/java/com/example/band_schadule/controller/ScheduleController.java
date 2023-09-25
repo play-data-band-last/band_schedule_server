@@ -73,7 +73,7 @@ public class ScheduleController {
     @PostMapping("/attendance")
     public ResponseEntity<RestResult<Object>> toggleAttendance(
             @RequestBody AttendanceRequestDto attendanceRequestDto) {
-        return scheduleService.toggleAttendance(attendanceRequestDto);
+        return scheduleService.toggleAttendanceByRedis(attendanceRequestDto);
     }
 
     @DeleteMapping("/{scheduleId}")

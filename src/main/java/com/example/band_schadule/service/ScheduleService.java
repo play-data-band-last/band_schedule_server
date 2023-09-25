@@ -12,6 +12,8 @@ import com.example.band_schadule.domain.response.ScheduleResponse;
 import com.example.band_schadule.repository.AttendanceRepository;
 import com.example.band_schadule.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +33,7 @@ public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final AttendanceRepository attendanceRepository;
+    private final RedissonClient redissonClient;
 
     public void save(Long communityId, ScheduleRequest request) {
         Schedule schedule = Schedule.builder()
@@ -90,7 +94,71 @@ public class ScheduleService {
         scheduleRepository.save(schedule);
     }
 
-    //스케줄 참석/불참
+
+    @Transactional
+    public ResponseEntity<RestResult<Object>> toggleAttendanceByRedis(AttendanceRequestDto attendanceRequestDto) {
+        Long memberId = attendanceRequestDto.getMemberId();
+        Long communityId = attendanceRequestDto.getCommunityId();
+        Long scheduleId = attendanceRequestDto.getScheduleId();
+        String useYn = attendanceRequestDto.getUseYn();
+
+        RLock lock = redissonClient.getLock("tempKey");
+        try {
+            boolean available = lock.tryLock(5, 1, TimeUnit.SECONDS);
+            if (!available) {
+                System.out.println("lock 실패");
+            }else{
+                Schedule schedule = scheduleRepository.findById(attendanceRequestDto.getScheduleId()).get();
+                if (schedule.getParticipant() < schedule.getMaxParticipation()){
+                    if ("Y".equals(useYn)) {
+                        //참석할 수 있는 최대 인원과 현재 참석한 인원 비교
+                        if (schedule.getParticipant() < schedule.getMaxParticipation()) {
+                            Boolean attendanceCheck = checkAttendance(memberId,scheduleId);
+                            if (attendanceCheck){
+                                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                        .body(new RestResult<>("BAD_REQUEST", new RestError("BAD_REQUEST", "이미 가입했습니다.")));
+                            }
+
+//                    참석
+                            Attendance attendance = Attendance.builder()
+                                    .schedule(schedule)
+                                    .useYn(attendanceRequestDto.getUseYn())
+                                    .memberId(attendanceRequestDto.getMemberId())
+                                    .build();
+                            attendanceRepository.save(attendance);
+
+                            // 참석 인원 증가
+                            schedule.setParticipant(schedule.getParticipant()+1);
+                            scheduleRepository.flush();
+
+                        } else {
+                            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                    .body(new RestResult<>("BAD_REQUEST", new RestError("BAD_REQUEST", "일정 정원이 초과되었습니다.")));
+                        }
+
+                    } else if ("N".equals(useYn)) {
+                        //불참
+                        Attendance attendance = attendanceRepository.findByMemberId(attendanceRequestDto.getMemberId());
+
+                        // 참석 인원 감소
+                        schedule.setParticipant(schedule.getParticipant() - 1);
+
+                        attendanceRepository.delete(attendance);
+                    }
+
+
+                    return ResponseEntity.ok(new RestResult<>("success", "참석이 완료 되었습니다."));
+                }
+            }
+
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            lock.unlock();
+        }
+        return null;
+    }
+        //스케줄 참석/불참
     @Transactional
     public ResponseEntity<RestResult<Object>> toggleAttendance(AttendanceRequestDto attendanceRequestDto) {
         Long memberId = attendanceRequestDto.getMemberId();
@@ -113,6 +181,7 @@ public class ScheduleService {
        /* CommunityMember communityMember = communityMemberRepository.findByCommunityIdAndMemberId(communityId, memberId).orElseThrow(
                 () -> new RuntimeException("CommunityMember not found!"));*/
         Schedule schedule = scheduleRepository.findAllByIdWithOptimisiticLock(scheduleId).orElseThrow(() -> new RuntimeException("Schedule not found!"));
+
 
 //        Optional<Attendance> attendance = attendanceRepository.findByCommunityMemberAndSchedule(communityMemberId, schedule);
 
@@ -179,7 +248,9 @@ public class ScheduleService {
     public Boolean checkAttendance(Long memberId, Long scheduleId
     ){
         Boolean res = null;
-        Integer check = attendanceRepository.countAttendanceByMemberIdAndSchedule(memberId,Schedule.builder().id(scheduleId).version(0).build());
+//        Integer check = attendanceRepository.countAttendanceByMemberIdAndSchedule(memberId,Schedule.builder().id(scheduleId).version(0).build());
+        Integer check = attendanceRepository.countAttendanceByMemberIdAndSchedule(memberId,Schedule.builder().id(scheduleId).build());
+
         if (check == 1){
             res = Boolean.TRUE;
         }else {

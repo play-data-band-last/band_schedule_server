@@ -4,8 +4,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/schedule?serverTimezone=Asia/Seoul
     username: root
-    password: 1234
-
+    password: 1q2w3e4r!!
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,6 +13,19 @@ spring:
       hibernate:
         format_sql: true
 
+  redis:
+    redisson:
+      file: classpath:redisson.yaml
+
+
+  data:
+    redis:
+      database: 0
+      host: 127.0.0.1
+      port: 6379
+      password: 1234
+
+
 server:
   port: 0
 
@@ -21,6 +33,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka
+    enabled: false
   instance:
     instanceId: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
 
