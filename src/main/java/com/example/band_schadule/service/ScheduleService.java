@@ -40,6 +40,7 @@ public class ScheduleService {
                 .maxParticipation(request.getMaxParticipation())
                 .communityId(communityId)
                 .interest(request.getInterest())
+                .memberId(request.getMemberId())
                 .build();
         scheduleRepository.save(schedule);
     }
@@ -109,14 +110,10 @@ public class ScheduleService {
         // 6. 취소버튼을 누른 유저의 memberId 를 기준으로 attandance (참석테이블) 에서 데이터를 찾는다.
         // 7. 찾았다면 해당 데이터를 삭제한다. ( 참석 취소 ) 넣어준 후 참석 인원 감소
 
-
-       /* CommunityMember communityMember = communityMemberRepository.findByCommunityIdAndMemberId(communityId, memberId).orElseThrow(
-                () -> new RuntimeException("CommunityMember not found!"));*/
         Schedule schedule = scheduleRepository.findAllByIdWithOptimisiticLock(scheduleId).orElseThrow(() -> new RuntimeException("Schedule not found!"));
 
-//        Optional<Attendance> attendance = attendanceRepository.findByCommunityMemberAndSchedule(communityMemberId, schedule);
-
             if ("Y".equals(useYn)) {
+
                 //참석할 수 있는 최대 인원과 현재 참석한 인원 비교
                 if (schedule.getParticipant() < schedule.getMaxParticipation()) {
                     Boolean attendanceCheck = checkAttendance(memberId,scheduleId);
@@ -135,8 +132,8 @@ public class ScheduleService {
 
                     // 참석 인원 증가
                     try {
-//                        scheduleRepository.updateParticipantByVersion(scheduleId, schedule.getVersion());
                         schedule.setParticipant(schedule.getParticipant()+1);
+                        scheduleRepository.flush();
                     }catch (Exception e){
                         toggleAttendance(attendanceRequestDto);
                     }
@@ -163,13 +160,13 @@ public class ScheduleService {
 
     @Transactional
 
-    public void updateBoardMember(MemberUpdateRequest memberUpdateRequest, Long memberId) throws Exception {
+    public void updateBoardMember(MemberUpdateRequest memberUpdateRequest) throws Exception {
         if (memberUpdateRequest.getMemberImage() != null && memberUpdateRequest.getMemberName() !=null ){
-            scheduleRepository.updateAlbumMemberImageAndMemberName(memberUpdateRequest.getMemberName(), memberUpdateRequest.getMemberImage(), memberId);
+            scheduleRepository.updateAlbumMemberImageAndMemberName(memberUpdateRequest.getMemberName(), memberUpdateRequest.getMemberImage(), memberUpdateRequest.getMemberId());
         } else if (memberUpdateRequest.getMemberImage()!=null && memberUpdateRequest.getMemberName() ==null) {
-            scheduleRepository.updateAlbumMemberImage(memberUpdateRequest.getMemberImage(),memberId);
+            scheduleRepository.updateAlbumMemberImage(memberUpdateRequest.getMemberImage(),memberUpdateRequest.getMemberId());
         } else if (memberUpdateRequest.getMemberImage()==null && memberUpdateRequest.getMemberName() != null) {
-            scheduleRepository.updateAlbumdMemberName(memberUpdateRequest.getMemberName(), memberId);
+            scheduleRepository.updateAlbumdMemberName(memberUpdateRequest.getMemberName(), memberUpdateRequest.getMemberId());
         } else {
             throw new Exception("NULL REQUEST");
         }

@@ -31,6 +31,4 @@ public class Schedule {
     private Long communityId;
     @Version
     private Integer version;
-
-
 }

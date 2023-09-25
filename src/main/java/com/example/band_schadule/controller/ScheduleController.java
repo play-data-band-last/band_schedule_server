@@ -91,7 +91,8 @@ public class ScheduleController {
     @PutMapping("/updatemember/{memberId}")
     public void updateMemberBoard(@PathVariable("memberId") Long memberId,
                                   @RequestBody MemberUpdateRequest memberUpdateRequest) throws Exception {
-        scheduleService.updateBoardMember(memberUpdateRequest, memberId);
+        memberUpdateRequest.setMemberId(memberId);
+        scheduleService.updateBoardMember(memberUpdateRequest);
     }
 
 }
