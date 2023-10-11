@@ -31,11 +31,6 @@ public class ScheduleController {
         return scheduleService.findByAtt(id);
     }
 
-    @GetMapping("/community/{id}")
-    public List<ScheduleResponse> findAll(@PathVariable("id") Long communityId) {
-        List<ScheduleResponse> all = scheduleService.findAll(communityId);
-        return all;
-    }
 
     //가입 정보를 위한 컨트롤러
     @GetMapping("scheduleid/{scheduleid}/memberid/{memberid}")

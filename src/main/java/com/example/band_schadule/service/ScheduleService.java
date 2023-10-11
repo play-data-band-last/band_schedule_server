@@ -54,10 +54,6 @@ public class ScheduleService {
         return scheduleList.stream().map(ScheduleResponse::new).collect(Collectors.toList());
     }
 
-    public List<ScheduleResponse> findAll(Long communityId) {
-        List<Schedule> scheduleList = scheduleRepository.findByCommunityId(communityId);
-        return scheduleList.stream().map(ScheduleResponse::new).collect(Collectors.toList());
-    }
 
     public List<ScheduleResponse> findUpcomingSchedulesByInterest(List<String> interest) {
         LocalDateTime currentTime = LocalDateTime.now();
