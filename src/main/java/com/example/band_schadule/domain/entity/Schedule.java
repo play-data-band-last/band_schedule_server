@@ -29,6 +29,8 @@ public class Schedule {
     private String memberName;
     private String memberImage;
     private Long communityId;
+    @Builder.Default
+    private Boolean isValid = Boolean.TRUE;
     @Version
     private Integer version;
 }

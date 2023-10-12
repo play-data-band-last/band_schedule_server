@@ -21,20 +21,14 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             "where s.id = :id")
     Optional<Schedule> findAllByIdWithOptimisiticLock(@Param("id") Long id);
 
-    @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
-    @Modifying
-    @Query("update Schedule s " +
-            "set s.participant = s.participant + 1 " +
-            "where s.id = :id " +
-            "and s.version = :version")
-    void updateParticipantByVersion(@Param("id") Long id ,@Param("version") Integer version);
 
     @Query("select s " +
             "from Schedule s " +
             "where  Date(s.scheduleTime) = Date(:currentTime) " +
             "and s.scheduleTime > :currentTime " +
             "and s.interest in :interests " +
-            "order by s.scheduleTime asc")
+            "and s.isValid = true " +
+            "order by s.scheduleTime asc ")
     List<Schedule> getScheduleByMain(List<String> interests, @Param("currentTime") LocalDateTime currentTime);
 
     List<Schedule> findByCommunityId(Long communityId);
@@ -57,6 +51,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
 
     List<Schedule> findAllBycommunityId(Long communityId);
+
+    Optional<Schedule> findByMemberId(Long userId);
 
 }
 
