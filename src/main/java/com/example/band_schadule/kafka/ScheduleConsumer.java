@@ -21,8 +21,8 @@ public class ScheduleConsumer {
 
     @RetryableTopic
     @KafkaListener(topics = TopicConfig.memberDelete)
-    public void listen(Long userId) throws Exception {
-
+    public void listenMemberDelete(MemberUpdateRequest memberUpdateRequest) throws Exception {
+        scheduleService.deleteMemberHandler(memberUpdateRequest.getMemberId());
     }
 
     @DltHandler

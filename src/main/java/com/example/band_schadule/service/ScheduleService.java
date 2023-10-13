@@ -190,6 +190,10 @@ public class ScheduleService {
         return byCommunityId.stream().map(ScheduleResponse::new).toList();
     }
 
+    public void deleteMemberHandler(Long memberId){
+        scheduleRepository.memberDelete(memberId);
+    }
+
 }
 
 

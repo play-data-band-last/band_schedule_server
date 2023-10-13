@@ -54,5 +54,11 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     Optional<Schedule> findByMemberId(Long userId);
 
+    @Modifying
+    @Query("update Schedule s " +
+            "set s.isValid = false " +
+            "where s.memberId = :memberId")
+    void memberDelete(@Param("memberId") Long userId);
+
 }
 
