@@ -17,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/schedule")
+@CrossOrigin("*")
 public class ScheduleController {
     private final ScheduleService scheduleService;
 
@@ -54,7 +55,6 @@ public class ScheduleController {
     //http://localhost:8080/api/v1/schedule/upcoming-by-interest?interest=사교/인맥&interest=공예/만들기
     @PostMapping("/upcomingByInterest")
     public List<ScheduleResponse> getScheduleByInterest(@RequestBody ScheduleDto scheduleDto) {
-        System.out.println(scheduleDto.getInterest());
         List<ScheduleResponse> upcomingSchedulesByInterest = scheduleService.findUpcomingSchedulesByInterest(scheduleDto.getInterest());
         return upcomingSchedulesByInterest;
     }
